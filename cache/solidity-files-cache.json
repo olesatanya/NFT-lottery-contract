@@ -1,0 +1,101 @@
+{
+  "_format": "hh-sol-cache-2",
+  "files": {
+    "E:\\project\\Lottery\\contracts\\LaunchpadPool.sol": {
+      "lastModificationDate": 1652878201129,
+      "contentHash": "d3826606873189445c56ce3b96fe5a24",
+      "sourceName": "contracts/LaunchpadPool.sol",
+      "solcConfig": {
+        "version": "0.7.6",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "devdoc",
+                "userdoc",
+                "storageLayout",
+                "evm.gasEstimates"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          },
+          "metadata": {
+            "useLiteralContent": true
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.7.6"
+      ],
+      "artifacts": [
+        "Address",
+        "BeamStarterLaunchPad",
+        "Context",
+        "ERC20",
+        "IERC20",
+        "Ownable",
+        "SafeERC20",
+        "SafeMath"
+      ]
+    },
+    "E:\\project\\Lottery\\contracts\\Token.sol": {
+      "lastModificationDate": 1652878608164,
+      "contentHash": "2983c02b4b5281339f66266d6ed0b018",
+      "sourceName": "contracts/Token.sol",
+      "solcConfig": {
+        "version": "0.7.6",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "devdoc",
+                "userdoc",
+                "storageLayout",
+                "evm.gasEstimates"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          },
+          "metadata": {
+            "useLiteralContent": true
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.7.6"
+      ],
+      "artifacts": [
+        "Context",
+        "ERC20",
+        "IERC20",
+        "Ownable",
+        "PERCToken",
+        "SafeMath"
+      ]
+    }
+  }
+}

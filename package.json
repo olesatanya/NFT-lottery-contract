@@ -1,0 +1,54 @@
+{
+  "name": "icicb-portal-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "dotenv": "^10.0.0",
+    "ethers": "^5.6.2",
+    "from": "^0.1.7",
+    "import": "^0.0.6",
+    "path-browserify": "^1.0.1"
+ 
+  },
+  "devDependencies": {
+    "@nomiclabs/hardhat-ethers": "^2.0.2",
+    "@nomiclabs/hardhat-etherscan": "^2.1.5",
+    "@nomiclabs/hardhat-waffle": "^2.0.1",
+    "@testing-library/jest-dom": "^5.11.4",
+    "@testing-library/react": "^11.1.0",
+    "@testing-library/user-event": "^12.1.10",
+    "chai": "^4.3.4",
+    "colors": "^1.4.0",
+    "ethereum-waffle": "^3.4.0",
+    "hardhat": "^2.9.2",
+    "hardhat-deploy": "^0.9.3"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "testui": "react-scripts test",
+    "eject": "react-scripts eject",
+    "test": "mocha",
+    "deploy-test": "npx hardhat run --network rinkeby scripts/deploy.js",
+    "deploy": "npx hardhat run --network eth scripts/deploy.js",
+    "verify": "npx hardhat  verify --network rinkeby 0xb5e63299EE2c9DabCd1Cf4c75497DfA83642CD0B"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}
