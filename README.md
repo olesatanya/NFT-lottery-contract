@@ -1,2 +1,2 @@
-# Fishking-contract
-FISH token on OKX chain
+# Lottery-contract
+
