@@ -1,10 +1,10 @@
 {
   "_format": "hh-sol-cache-2",
   "files": {
-    "E:\\project\\Lottery\\contracts\\LaunchpadPool.sol": {
-      "lastModificationDate": 1652878201129,
-      "contentHash": "d3826606873189445c56ce3b96fe5a24",
-      "sourceName": "contracts/LaunchpadPool.sol",
+    "E:\\project\\NFTDropPlatform\\NFTDropPlatform-Frontend\\contracts\\Lottery.sol": {
+      "lastModificationDate": 1652921623938,
+      "contentHash": "fab39792e63c0fec86987b11771642e6",
+      "sourceName": "contracts/Lottery.sol",
       "solcConfig": {
         "version": "0.7.6",
         "settings": {
@@ -41,16 +41,16 @@
       ],
       "artifacts": [
         "Address",
-        "BeamStarterLaunchPad",
         "Context",
         "ERC20",
         "IERC20",
+        "Lottery",
         "Ownable",
         "SafeERC20",
         "SafeMath"
       ]
     },
-    "E:\\project\\Lottery\\contracts\\Token.sol": {
+    "E:\\project\\NFTDropPlatform\\NFTDropPlatform-Frontend\\contracts\\Token.sol": {
       "lastModificationDate": 1652878608164,
       "contentHash": "2983c02b4b5281339f66266d6ed0b018",
       "sourceName": "contracts/Token.sol",

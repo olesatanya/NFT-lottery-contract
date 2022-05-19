@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.7.6;
+pragma abicoder v2;
 
 /*
         █▄░█ █▀▀ ▀█▀   █░░ █▀█ ▀█▀ ▀█▀ █▀▀ █▀█ █▄█
@@ -439,7 +440,7 @@ contract Lottery is Ownable{
 	}
 	
 	function isStakingActived(address _account) public view returns(bool) {
-		StakingToken stoken = stakings[_account];
+		StakingToken memory stoken = stakings[_account];
 		uint startTime = stoken.startTime;
 		uint endTime = stoken.endTime;
 		return block.timestamp >= startTime && block.timestamp <= endTime;
@@ -455,13 +456,13 @@ contract Lottery is Ownable{
 		StakingToken memory newStaking = StakingToken({
 			account : account,
 			startTime : block.timestamp,
-			endTime block.timestamp.add(period),
+			endTime : block.timestamp.add(period),
 			amount : tokenCount,
 			period : period,
 			ticket : ticketCount,
 			itemSize : _itemSize,
 			itemCost : _itemCost,
-			claimTime : 0
+			claimTime : 0,
 			claimedToken : 0
 		});
 		stakings[account] = newStaking;
@@ -475,7 +476,6 @@ contract Lottery is Ownable{
 	
 	function getClaim(uint _amount) public {
 		address _account = msg.sender;
-		StakingToken stoken = stakings[_account];
 		require(_account != address(0), "Claim: mint to the zero address");
 		require(!isStakingActived(_account), "Claim: token locked");
 		require(getRemainToken(_account) >= _amount, "Claim: not enough token");
