@@ -355,6 +355,19 @@ contract Lottery is Ownable{
 	uint private  totalSupply;
 	uint private  totalSold; 
 	uint private  totalWined; 
+
+	uint[4] private  percs = [
+		100 * 1e18,
+		1000 * 1e18,
+		10000 * 1e18,
+		100000 * 1e18
+	];
+	uint[4] private  periods = [
+		0,
+		7776000,
+		31104000,
+		124416000
+	];
 	event getTicket(address indexed tokenAddress, address indexed account, uint value);
 	event Claim(address indexed tokenAddress, address indexed account, uint value);
 	event Lottery(address indexed tokenAddress, address indexed account,  uint value);
@@ -432,8 +445,32 @@ contract Lottery is Ownable{
 		return block.timestamp >= startTime && block.timestamp <= endTime;
 	}
 
-	function getTickets(uint _tokens, uint _period, uint _tickets, uint _itemSize, uint _itemCost) public  {
-
+	function getTickets(uint _tokens, uint _period,  uint _itemSize, uint _itemCost) public  {
+		uint tokenCount = percs[_tokens.sub(1)];
+		uint ticketCount = _tokens.mul(_period);
+		uint period = periods[_period.sub(1)];
+		address account = msg.sender;
+		require(account!=address(0), "Lottery: msg sender is zero");
+		ERC20(perc).safeTransferFrom(msg.sender, address(this), tokenCount);
+		StakingToken memory newStaking = StakingToken({
+			account : account,
+			startTime : block.timestamp,
+			endTime block.timestamp.add(period),
+			amount : tokenCount,
+			period : period,
+			ticket : ticketCount,
+			itemSize : _itemSize,
+			itemCost : _itemCost,
+			claimTime : 0
+			claimedToken : 0
+		});
+		stakings[account] = newStaking;
+		for(uint i=1; i<=ticketCount; i++){
+			ticketOwners[totalSold.add(i)] = account;
+		}
+		ticketBalances[account] = ticketCount;
+		totalSold = totalSold + ticketCount;
+		emit getTicket(perc, account, ticketCount);
 	}
 	
 	function getClaim(uint _amount) public {
