@@ -6,9 +6,10 @@ pragma abicoder v2;
         █▄░█ █▀▀ ▀█▀   █░░ █▀█ ▀█▀ ▀█▀ █▀▀ █▀█ █▄█
         █░▀█ █▀░ ░█░   █▄▄ █▄█ ░█░ ░█░ ██▄ █▀▄ ░█░
 
-Lottery on our website:
-https://lottery.com
-Author: chenjiejie
+		Lottery on our website:
+		https://lottery.com
+		Author: chenjiejie
+		
 */
 
 
