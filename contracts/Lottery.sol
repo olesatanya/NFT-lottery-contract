@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.7.6;
 pragma abicoder v2;
-
 /*
         █▄░█ █▀▀ ▀█▀   █░░ █▀█ ▀█▀ ▀█▀ █▀▀ █▀█ █▄█
         █░▀█ █▀░ ░█░   █▄▄ █▄█ ░█░ ░█░ ██▄ █▀▄ ░█░
@@ -372,7 +371,12 @@ contract Lottery is Ownable{
 	];
 	event getTicket(address indexed tokenAddress, address indexed account, uint value);
 	event Claim(address indexed tokenAddress, address indexed account, uint value);
-	event Lottery(address indexed tokenAddress, address indexed account,  uint value);
+	event PlayLottery(address indexed tokenAddress, address indexed account,  uint value);
+	
+	
+	enum LotteryState { Open, Closed, Finished }
+	LotteryState public lotteryState;	
+
 
 	struct StakingToken {
 		address account;
@@ -386,10 +390,11 @@ contract Lottery is Ownable{
 		uint claimTime;
 		uint claimedToken;
 	}
-
+	
 	mapping(address => StakingToken) private stakings;
 	mapping(address => uint) private ticketBalances;
 	mapping(uint => address) private ticketOwners;
+	mapping(uint => bool) private winners;
 
 	constructor(address _perc, address _storeWallet,  uint _startTime, uint _endTime) {
 		perc = _perc;
@@ -397,7 +402,9 @@ contract Lottery is Ownable{
 		lotteryStartTime = _startTime;
 		lotteryEndTime = _endTime;
 		totalSupply = 10000;
+		lotteryState = LotteryState.Closed;
 	}
+
 
 	function setWinnerRate(uint _rate) public onlyOwner{
 		lotteryWinnerRate = _rate;
@@ -447,7 +454,7 @@ contract Lottery is Ownable{
 		return block.timestamp >= startTime && block.timestamp <= endTime;
 	}
 
-	function getTickets(uint _tokens, uint _period,  uint _itemSize, uint _itemCost) public  {
+	function getTickets(uint _tokens, uint _period,  uint _itemSize, uint _itemCost) public  returns(uint){
 		uint tokenCount = percs[_tokens.sub(1)];
 		uint ticketCount = _tokens.mul(_period);
 		uint period = periods[_period.sub(1)];
@@ -469,10 +476,12 @@ contract Lottery is Ownable{
 		stakings[account] = newStaking;
 		for(uint i=1; i<=ticketCount; i++){
 			ticketOwners[totalSold.add(i)] = account;
+			winners[totalSold.add(i)] = false;
 		}
 		ticketBalances[account] = ticketCount;
 		totalSold = totalSold + ticketCount;
 		emit getTicket(perc, account, ticketCount);
+		return totalSold;
 	}
 	
 	function getClaim(uint _amount) public {
@@ -485,5 +494,27 @@ contract Lottery is Ownable{
 		stakings[_account].claimTime = block.timestamp;
 		emit Claim(perc, _account, _amount);
 	}
-	
+
+	function random(uint s) private view returns(uint){ 
+		return uint(keccak256(abi.encode(block.timestamp, s)));
+	}
+
+	function setLotteryOpen()  public onlyOwner{ 
+		lotteryState = LotteryState.Open;
+	}
+	function playLottery() public onlyOwner{  
+		require(lotteryState == LotteryState.Open, 'Lottery: not actived');
+		require(isLotteryActived(), 'Lottery: not actived');
+		uint rate = lotteryWinnerRate.mul(1000).div(totalSupply.mul(10));
+		for(uint i=0; i<rate; i++){
+			uint r = random(i) % totalSupply;
+			winners[r] = true;
+		}
+		lotteryState = LotteryState.Finished;
+		emit PlayLottery(perc, msg.sender, rate);
+	}
+
+	function getWinnerOf(uint _ticketId) public view returns(bool){ 
+		return winners[_ticketId];
+	}
 }
