@@ -372,7 +372,6 @@ contract Lottery is Ownable{
 		uint claimedToken;
 	}
 
-
 	mapping(uint => LotteryType) private lotteries;							//lotteryId => info
 	mapping(uint => mapping (uint => string)) private nftUrls;				//lotteryId => nftid => url
 	mapping(string => address) private nftOwners;							//nftUrl => address
@@ -391,7 +390,6 @@ contract Lottery is Ownable{
 	event PlayLottery(string indexed name, uint indexed lotteryId, uint value);
 	event GetTicket(address indexed tokenAddress, address indexed account, uint value);
 	event Claim(address indexed tokenAddress, address indexed account, uint value);
-	
 	
 	uint[4] private  percs = [
 		100 * 1e18,
