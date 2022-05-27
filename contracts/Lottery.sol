@@ -7,7 +7,7 @@ pragma abicoder v2;
 
 		Lottery on our website:
 		https://lottery.com
-		Author: chenjiejie
+		Author: chenjiejie334@gmail.com
 		
 */
 
@@ -346,38 +346,19 @@ contract Lottery is Ownable{
 	string public Name = "NFT Drop Platform";
 	using SafeMath for uint;
 	using SafeERC20 for ERC20;
+	address private immutable PERC;  //PERC token
+	address private immutable StoreWallet;  //PERC Token Store Wallet
 
-	address private immutable perc;  //PERC token
-	address private immutable storeWallet;  //PERC Token Store Wallet
+	struct LotteryType{
+		string	name;
+		uint	startTime;
+		uint	endTime;
+		uint	winnerRate;  //10
+		uint	totalSupply;
+		uint	totalTicketSold;
+		bool	ended;
+	}
 	
-	uint public  lotteryStartTime;
-	uint public  lotteryEndTime;
-	uint private lotteryWinnerRate = 50;
-	uint private  totalSupply;
-	uint private  totalSold; 
-	uint private  totalWined; 
-
-	uint[4] private  percs = [
-		100 * 1e18,
-		1000 * 1e18,
-		10000 * 1e18,
-		100000 * 1e18
-	];
-	uint[4] private  periods = [
-		0,
-		7776000,
-		31104000,
-		124416000
-	];
-	event getTicket(address indexed tokenAddress, address indexed account, uint value);
-	event Claim(address indexed tokenAddress, address indexed account, uint value);
-	event PlayLottery(address indexed tokenAddress, address indexed account,  uint value);
-	
-	
-	enum LotteryState { Open, Closed, Finished }
-	LotteryState public lotteryState;	
-
-
 	struct StakingToken {
 		address account;
 		uint startTime;
@@ -390,63 +371,155 @@ contract Lottery is Ownable{
 		uint claimTime;
 		uint claimedToken;
 	}
+
+
+	mapping(uint => LotteryType) private lotteries;							//lotteryId => info
+	mapping(uint => mapping (uint => string)) private nftUrls;				//lotteryId => nftid => url
+	mapping(string => address) private nftOwners;							//nftUrl => address
+	mapping(uint => mapping (uint => address)) private lotteryTicketOwners; //lotteryId => ticketId => address
+	mapping(address => mapping (uint => uint)) private lotteryTicketCounts; //address => lotteryId => ticketCount
+	mapping(address => mapping (uint => string)) private ownerNFTs;			//address => lotteryId => NFT url
+	mapping(uint => uint) private totalSoldTickets;
 	
 	mapping(address => StakingToken) private stakings;
 	mapping(address => uint) private ticketBalances;
-	mapping(uint => address) private ticketOwners;
-	mapping(uint => bool) private winners;
+	uint private totalLotteries;
 
-	constructor(address _perc, address _storeWallet,  uint _startTime, uint _endTime) {
-		perc = _perc;
-		storeWallet = _storeWallet;
-		lotteryStartTime = _startTime;
-		lotteryEndTime = _endTime;
-		totalSupply = 10000;
-		lotteryState = LotteryState.Closed;
+	event CreateLottery(string indexed name, uint indexed lotteryId, uint value);
+	event CloseLottery(string indexed name, uint indexed lotteryId, uint value);
+	event ChangeLottery(string indexed name, uint indexed lotteryId, uint value);
+	event PlayLottery(string indexed name, uint indexed lotteryId, uint value);
+	event GetTicket(address indexed tokenAddress, address indexed account, uint value);
+	event Claim(address indexed tokenAddress, address indexed account, uint value);
+	
+	
+	uint[4] private  percs = [
+		100 * 1e18,
+		1000 * 1e18,
+		10000 * 1e18,
+		100000 * 1e18
+	];
+	uint[4] private  periods = [
+		0,
+		7776000,
+		31104000,
+		124416000
+	];
+
+	constructor(address _perc, address _storeWallet) {
+		require(_perc!=address(0), "Constructor: PERCAddress is zero");
+		require(_storeWallet!=address(0), "Constructor: storeWallet is zero");
+		require(Address.isContract(_perc), "Constructor: PERCAddress is not contract address");
+		PERC = _perc;
+		StoreWallet = _storeWallet;
 	}
 
-
-	function setWinnerRate(uint _rate) public onlyOwner{
-		lotteryWinnerRate = _rate;
-	}
-	function setStartTime(uint _start) public onlyOwner{
-		lotteryStartTime = _start;
+	function getLotteryCount() public view returns(uint){
+		return totalLotteries;
 	}
 
-	function setEndTime(uint _end) public onlyOwner{
-		lotteryEndTime = _end;
+	function getNFTOwner(string memory url) public view returns(address){
+		return nftOwners[url];
+	}
+	
+	function getLotteryInfo(uint _lotteryId) public view returns(LotteryType memory){
+		return lotteries[_lotteryId];
+	}
+	
+	function createLottery(string memory _name, uint _startTime, uint _endTime, uint _rate,  string[] memory _urls) public onlyOwner{  
+		uint total = _urls.length;
+		LotteryType memory newLottery = LotteryType({
+			name:			_name,
+			startTime:		_startTime,
+			endTime:		_endTime,
+			winnerRate:		_rate,
+			totalSupply:	total,
+			totalTicketSold: 0,
+			ended:			false
+		});
+		lotteries[totalLotteries] = newLottery;
+		emit CreateLottery(_name, totalLotteries, 0);
+		for(uint i=0; i<total; i++){
+			string memory url = _urls[i];
+			nftUrls[totalLotteries][i] = url;
+		}
+		totalLotteries = totalLotteries.add(1);
+	}
+
+	function changeLotteryInfo(uint _lotteryId, string calldata _name, uint _startTime, uint _endTime, uint _winnerRate) public onlyOwner{	
+		lotteries[_lotteryId].name			=	_name;
+		lotteries[_lotteryId].startTime		=	_startTime;
+		lotteries[_lotteryId].endTime		=	_endTime;
+		lotteries[_lotteryId].winnerRate	=	_winnerRate;
+		emit CreateLottery(lotteries[_lotteryId].name, _lotteryId, 0);
+	}
+
+	function closeLottery(uint _lotteryId) public onlyOwner{	
+		lotteries[_lotteryId].ended	=	true;
+		emit CloseLottery(lotteries[_lotteryId].name, _lotteryId, 0);
+	}
+	
+	function getLotteryActived(uint _lotteryId) public view returns(uint) {
+		uint startTime	= lotteries[_lotteryId].startTime;
+		uint endTime	= lotteries[_lotteryId].endTime;
+		uint nowTime	= block.timestamp;
+		if(nowTime >= startTime && nowTime <= endTime) return 1; //active
+		if(nowTime < startTime ) return 2; //upcoming
+		if(nowTime > endTime) return 3; //closed
+	}
+
+	function joinLottery(uint _lotteryId) public{ 
+		address account = msg.sender;
+		require(account!=address(0), "JoinLottery: account is zero");
+		require(ticketBalances[account]>0, "JoinLottery: ticketBalance is zero");
+		uint count = lotteryTicketCounts[account][_lotteryId];
+		lotteryTicketCounts[account][_lotteryId] = count.add(1);
+		lotteryTicketOwners[_lotteryId][totalSoldTickets[_lotteryId]] = account;
+		ticketBalances[account] = ticketBalances[account] - 1;
+	}
+	function playLottery(uint _lotteryId) public onlyOwner{  
+		require(!lotteries[_lotteryId].ended,  'Lottery: ended');
+		require(getLotteryActived(_lotteryId) == 1, 'Lottery: not started');
+		uint totalSupply = lotteries[_lotteryId].totalSupply;
+		uint rate = lotteries[_lotteryId].winnerRate.mul(1000).div(totalSupply.mul(10));
+		for(uint i=0; i<rate; i++){
+			uint r = random(i) % totalSupply;
+			string memory nftUrl = nftUrls[_lotteryId][r];
+			address account = lotteryTicketOwners[_lotteryId][r];
+			nftOwners[nftUrl] = account;			
+			uint tickets = lotteryTicketCounts[account][_lotteryId];
+			ownerNFTs[account][tickets] = nftUrl;
+		}
+		lotteries[_lotteryId].ended = true;
+		emit PlayLottery(lotteries[_lotteryId].name , _lotteryId , 0);
+	}
+
+	function getMyNFTs(uint _lotteryId) public returns (string memory){
+		address account = msg.sender;
+		require(account!=address(0), "Lottery: account is zero");
+		return ownerNFTs[account][_lotteryId];
+	}
+	function getNFTurl(uint _lotteryId, uint _nftId) public returns (string memory){
+		return nftUrls[_lotteryId][_nftId];
+	}
+
+	function random(uint seed) private view returns(uint){ 
+		return uint(keccak256(abi.encode(block.timestamp, seed)));
 	}
 
 	function getRemainToken(address _account) public view returns(uint) {
 		return stakings[_account].amount.sub(stakings[_account].claimedToken);
 	}
-
-	function getTotalSupply() public view returns(uint) {
-		return totalSupply;
-	}
-	function getTotalSold() public view returns(uint) {
-		return totalSold;
-	}
-	function getTotalWined() public view returns(uint) {
-		return totalWined;
-	}
-	function getLotteryStartTime() public view returns(uint) {
-		return lotteryStartTime;
-	}
-	function getLotteryEndTime() public view returns(uint) {
-		return lotteryEndTime;
-	}
-	function getTicketOf(address _account) public view returns(uint) {
+	function getTicketBalanceOf(address _account) public view returns(uint) {
 		return ticketBalances[_account];
 	}
 	function getStakingInfoOf(address _account) public view returns(StakingToken memory) {
 		return stakings[_account];
 	}
-
-	function isLotteryActived() public view returns(bool) {
-		return block.timestamp >= lotteryStartTime && block.timestamp <= lotteryEndTime;
+	function getStakingEndTime(address _account) public view returns(uint) {
+		StakingToken memory stoken = stakings[_account];
+		return stoken.endTime;
 	}
-	
 	function isStakingActived(address _account) public view returns(bool) {
 		StakingToken memory stoken = stakings[_account];
 		uint startTime = stoken.startTime;
@@ -454,13 +527,13 @@ contract Lottery is Ownable{
 		return block.timestamp >= startTime && block.timestamp <= endTime;
 	}
 
-	function getTickets(uint _tokens, uint _period,  uint _itemSize, uint _itemCost) public  returns(uint){
+	function getTickets(uint _tokens, uint _period,  uint _itemSize, uint _itemCost) public{
 		uint tokenCount = percs[_tokens.sub(1)];
 		uint ticketCount = _tokens.mul(_period);
 		uint period = periods[_period.sub(1)];
 		address account = msg.sender;
 		require(account!=address(0), "Lottery: msg sender is zero");
-		ERC20(perc).safeTransferFrom(msg.sender, address(this), tokenCount);
+		ERC20(PERC).safeTransferFrom(msg.sender, address(this), tokenCount);
 		StakingToken memory newStaking = StakingToken({
 			account : account,
 			startTime : block.timestamp,
@@ -474,14 +547,8 @@ contract Lottery is Ownable{
 			claimedToken : 0
 		});
 		stakings[account] = newStaking;
-		for(uint i=1; i<=ticketCount; i++){
-			ticketOwners[totalSold.add(i)] = account;
-			winners[totalSold.add(i)] = false;
-		}
-		ticketBalances[account] = ticketCount;
-		totalSold = totalSold + ticketCount;
-		emit getTicket(perc, account, ticketCount);
-		return totalSold;
+		ticketBalances[account] = ticketBalances[account].add(ticketCount);	
+		emit GetTicket(PERC, account, ticketCount);
 	}
 	
 	function getClaim(uint _amount) public {
@@ -489,32 +556,9 @@ contract Lottery is Ownable{
 		require(_account != address(0), "Claim: mint to the zero address");
 		require(!isStakingActived(_account), "Claim: token locked");
 		require(getRemainToken(_account) >= _amount, "Claim: not enough token");
-		ERC20(perc).safeTransfer(msg.sender, _amount);
+		ERC20(PERC).safeTransfer(msg.sender, _amount);
 		stakings[_account].claimedToken = stakings[_account].claimedToken.add(_amount);
 		stakings[_account].claimTime = block.timestamp;
-		emit Claim(perc, _account, _amount);
-	}
-
-	function random(uint s) private view returns(uint){ 
-		return uint(keccak256(abi.encode(block.timestamp, s)));
-	}
-
-	function setLotteryOpen()  public onlyOwner{ 
-		lotteryState = LotteryState.Open;
-	}
-	function playLottery() public onlyOwner{  
-		require(lotteryState == LotteryState.Open, 'Lottery: not actived');
-		require(isLotteryActived(), 'Lottery: not actived');
-		uint rate = lotteryWinnerRate.mul(1000).div(totalSupply.mul(10));
-		for(uint i=0; i<rate; i++){
-			uint r = random(i) % totalSupply;
-			winners[r] = true;
-		}
-		lotteryState = LotteryState.Finished;
-		emit PlayLottery(perc, msg.sender, rate);
-	}
-
-	function getWinnerOf(uint _ticketId) public view returns(bool){ 
-		return winners[_ticketId];
+		emit Claim(PERC, _account, _amount);
 	}
 }
